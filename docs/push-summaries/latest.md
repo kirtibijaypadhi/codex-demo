@@ -1,168 +1,178 @@
 # Push Summary
 
-Generated: 2026-03-22 17:40:03 UTC
+Generated: 2026-03-22 17:50:22 UTC
 
 ## Push Context
 
 - Local ref: `refs/heads/main`
-- Local sha: `d961a63dc7d4f62d6b166cbe0f7a6e54d47849c3`
+- Local sha: `fff61a4d7fbc4d2c3cb6b2b4f2252bfbd025f17e`
 - Remote ref: `refs/heads/main`
-- Remote sha: `0000000000000000000000000000000000000000`
+- Remote sha: `d961a63dc7d4f62d6b166cbe0f7a6e54d47849c3`
 
 ## Commits In This Push
 
-- d961a63 Initial commit
+- fff61a4 add git and jira MCP demo workflow
 
 ## Files Changed
 
-- `.codex/SKILLS.md`
 - `.codex/config.toml`
 - `.codex/rules/default.rules`
+- `.githooks/pre-push`
 - `.gitignore`
+- `AGENTS.md`
 - `Makefile`
 - `README.md`
-- `composer.json`
+- `docs/JIRA_DEMO.md`
 - `docs/THEORY.md`
-- `scripts/demo.sh`
-- `src/index.php`
+- `docs/push-summaries/README.md`
+- `docs/push-summaries/latest.md`
+- `scripts/implement-ticket.sh`
+- `scripts/install-hooks.sh`
+- `tools/git_mcp_server.py`
+- `tools/git_summary.py`
 
 ## Diff Stat
 
 ```text
-.codex/SKILLS.md           |  47 +++++++++++
- .codex/config.toml         |  28 +++++++
- .codex/rules/default.rules |  31 +++++++
- .gitignore                 |   3 +
- Makefile                   |  19 +++++
- README.md                  | 154 +++++++++++++++++++++++++++++++++++
- composer.json              |  16 ++++
- docs/THEORY.md             | 197 +++++++++++++++++++++++++++++++++++++++++++++
- scripts/demo.sh            |  20 +++++
- src/index.php              |  45 +++++++++++
- 10 files changed, 560 insertions(+)
+.codex/config.toml            |  16 ++++
+ .codex/rules/default.rules    |  10 ++-
+ .githooks/pre-push            |  28 ++++++
+ .gitignore                    |   3 +
+ AGENTS.md                     |  56 ++++++++++++
+ Makefile                      |  13 ++-
+ README.md                     | 106 ++++++++++++++++++++++-
+ docs/JIRA_DEMO.md             |  73 ++++++++++++++++
+ docs/THEORY.md                | 109 +++++++++++++++++++++++-
+ docs/push-summaries/README.md |   5 ++
+ docs/push-summaries/latest.md | 168 ++++++++++++++++++++++++++++++++++++
+ scripts/implement-ticket.sh   |  22 +++++
+ scripts/install-hooks.sh      |  10 +++
+ tools/git_mcp_server.py       | 135 +++++++++++++++++++++++++++++
+ tools/git_summary.py          | 194 ++++++++++++++++++++++++++++++++++++++++++
+ 15 files changed, 941 insertions(+), 7 deletions(-)
 ```
 
 ## Diff Excerpt
 
 ```diff
-diff --git a/.codex/SKILLS.md b/.codex/SKILLS.md
-new file mode 100644
-index 0000000..bdc9158
---- /dev/null
-+++ b/.codex/SKILLS.md
-@@ -0,0 +1,47 @@
-+# Skills for `codex-mcp-demo`
-+
-+## Skill: Pre-Commit Code Review
-+
-+Use this skill before creating a commit for any PHP code change.
-+
-+### Goal
-+Catch security vulnerabilities and style/quality issues early so demo commits stay safe and readable.
-+
-+### Inputs
-+- Changed files (`git diff` or staged diff)
-+- Target runtime assumptions (PHP version, dependencies)
-+
-+### Workflow
-+1. **Scope the change**
-+   - Identify edited PHP files under `src/`.
-+   - Summarize behavior changes in one sentence.
-+2. **Run security checks**
-+   - Validate user input handling (`filter_input`, sanitization, validation).
-+   - Check for injection risks (SQL injection, command execution, unsafe eval usage).
-+   - Review authentication/authorization assumptions for endpoints.
-+   - Ensure sensitive data is not leaked in responses or logs.
-+3. **Run style and quality checks**
-+   - Confirm `declare(strict_types=1);` usage for PHP files where appropriate.
-+   - Check naming clarity, dead code, and duplicated logic.
-+   - Verify response codes and error paths are explicit and consistent.
-+   - Validate JSON responses are predictable and documented.
-+4. **Report findings**
-+   - Output issues ordered by severity: `critical`, `high`, `medium`, `low`.
-+   - Include file path and a suggested fix for each finding.
-+5. **Gate commit**
-+   - If `critical` or `high` issues exist, block commit and request fixes.
-+   - If only `medium`/`low` issues exist, allow commit with follow-up recommendations.
-+
-+### Output Template
-+```md
-+Pre-Commit Code Review Result
-+
-+Risk Level: <low|medium|high>
-+
-+Findings:
-+1) [severity] <issue title> - <file path>
-+   - Why it matters:
-+   - Suggested fix:
-+
-+Commit Decision: <approve|changes requested>
-+```
 diff --git a/.codex/config.toml b/.codex/config.toml
-new file mode 100644
-index 0000000..c261036
---- /dev/null
+index c261036..c6650dc 100644
+--- a/.codex/config.toml
 +++ b/.codex/config.toml
-@@ -0,0 +1,28 @@
-+# Mock Codex configuration for MCP demo integrations.
-+
-+[project]
-+name = "codex-mcp-demo"
-+language = "php"
-+entrypoint = "src/index.php"
-+
-+[rules]
-+default = ".codex/rules/default.rules"
-+
-+# Dummy local STDIO MCP server (e.g., SQLite connector).
-+[mcp.servers.sqlite_local]
+@@ -18,2 +18,18 @@ enabled = true
+ 
++# Local Git-focused MCP server for push summaries.
++[mcp.servers.git_summary_local]
 +type = "stdio"
 +command = "python3"
-+args = ["tools/sqlite_mcp_server.py", "--db", "data/demo.sqlite"]
++args = ["tools/git_mcp_server.py"]
 +working_dir = "."
 +enabled = true
 +
-+# Dummy Streamable HTTP MCP server (e.g., internal API docs service).
-+[mcp.servers.internal_api_docs]
++# Jira MCP template for ticket-driven implementation demos.
++# Replace the placeholder token and project guidance with your real setup.
++[mcp.servers.jira_project]
 +type = "streamable_http"
-+url = "https://internal-docs.example.local/mcp"
-+headers = { "Authorization" = "Bearer DEMO_TOKEN", "X-Demo-Client" = "codex-mcp-demo" }
-+enabled = true
++url = "https://mcp.atlassian.com/v1/mcp"
++headers = { "Authorization" = "Bearer ATLASSIAN_API_TOKEN", "X-Demo-Client" = "codex-mcp-demo" }
++enabled = false
 +
-+[mcp.defaults]
-+timeout_seconds = 20
-+retry_attempts = 2
+ # Dummy Streamable HTTP MCP server (e.g., internal API docs service).
 diff --git a/.codex/rules/default.rules b/.codex/rules/default.rules
-new file mode 100644
-index 0000000..9a16ae4
---- /dev/null
+index 9a16ae4..4a9302d 100644
+--- a/.codex/rules/default.rules
 +++ b/.codex/rules/default.rules
-@@ -0,0 +1,31 @@
-+# Mock Codex rules engine policy (Starlark-style example).
-+# This file is intentionally simple for demo purposes.
-+
-+rules = [
-+    # 1) Allow: low-risk read-only git commands.
+@@ -20,3 +20,11 @@ rules = [
+ 
+-    # 3) Forbidden: block clearly dangerous shell/database commands.
++    # 3) Prompt: treat pushes as high-impact actions that deserve review.
 +    rule(
-+        name = "allow-safe-git-read",
-+        action = "allow",
-+        match = command_matches(r"^git (status|diff|log)( .*)?$"),
-+        reason = "Allow standard read-only git inspection commands.",
-+    ),
-+
-+    # 2) Prompt: ask for explicit approval on package changes.
-+    rule(
-+        name = "prompt-package-management",
++        name = "prompt-git-push",
 +        action = "prompt",
-+        match = command_matches(r"^composer (update|require|remove)( .*)?$"),
-+        reason = "Package operations can change lockfiles and runtime behavior.",
++        match = command_matches(r"^git push( .*)?$"),
++        reason = "Pushing publishes changes and should be reviewed explicitly.",
 +    ),
 +
-+    # 3) Forbidden: block clearly dangerous shell/database commands.
-+    rule(
-+        name = "forbid-destructive-ops",
-+        action = "forbidden",
-+        match = any_of([
-+            command_matches(r"^rm -rf( .*)?$"),
-+            command_matches(r".*\bDROP\s+DATABASE\b.*"),
++    # 4) Forbidden: block clearly dangerous shell/database commands.
+     rule(
+diff --git a/.githooks/pre-push b/.githooks/pre-push
+new file mode 100755
+index 0000000..5eff814
+--- /dev/null
++++ b/.githooks/pre-push
+@@ -0,0 +1,28 @@
++#!/usr/bin/env bash
++set -euo pipefail
++
++ROOT="$(git rev-parse --show-toplevel)"
++SUMMARY_PATH="$ROOT/docs/push-summaries/latest.md"
++
++push_input="$(cat)"
++
++if [[ -z "${push_input}" ]]; then
++  echo "pre-push: no refs received; skipping summary generation."
++  exit 0
++fi
++
++python3 "$ROOT/tools/git_summary.py" --output "$SUMMARY_PATH" <<< "$push_input"
++
++if [[ -n "$(git status --porcelain -- "$SUMMARY_PATH")" ]]; then
++  echo ""
++  echo "Push summary updated at docs/push-summaries/latest.md"
++  echo "Review it, then run:"
++  echo "  git add docs/push-summaries/latest.md"
++  echo "  git commit -m \"Add push summary\""
++  echo "  git push"
++  echo ""
++  echo "Push blocked intentionally so the summary becomes part of the visible history."
++  exit 1
++fi
++
++exit 0
+diff --git a/.gitignore b/.gitignore
+index f19e98c..296a03d 100644
+--- a/.gitignore
++++ b/.gitignore
+@@ -3 +3,4 @@ composer.lock
+ .DS_Store
++.venv/
++__pycache__/
++tools/__pycache__/
+diff --git a/AGENTS.md b/AGENTS.md
+new file mode 100644
+index 0000000..285d25a
+--- /dev/null
++++ b/AGENTS.md
+@@ -0,0 +1,56 @@
++# AGENTS.md
++
++This repository is a teaching demo for Codex, rules, MCP, and Git-aware workflows.
++
++## Primary Goal
++
++When a user asks to implement a Jira ticket such as `PROJ-123`, follow this workflow:
++
++1. Use the Jira MCP server configured in `.codex/config.toml` to fetch the issue details.
++2. Summarize the ticket in plain English:
++   - title
++   - business goal
++   - acceptance criteria
++   - risks or missing information
++3. Map the ticket to the local codebase before changing anything:
++   - identify likely files
++   - explain why those files are relevant
++   - state assumptions if the ticket is underspecified
++4. Implement the smallest correct change that satisfies the ticket.
++5. Run lightweight verification:
++   - syntax checks
++   - relevant tests if they exist
++   - a short summary of what was validated
++6. Report back with:
++   - what the ticket required
++   - what changed
++   - what still needs confirmation
++
++## Jira Ticket Behavior
++
++If a ticket is mentioned, prefer this sequence:
 ```
