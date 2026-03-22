@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+ROOT="$(git rev-parse --show-toplevel)"
+SUMMARY_PATH="$ROOT/docs/push-summaries/latest.md"
+
+push_input="$(cat)"
+
+if [[ -z "${push_input}" ]]; then
+  echo "pre-push: no refs received; skipping summary generation."
+  exit 0
+fi
+
+python3 "$ROOT/tools/git_summary.py" --output "$SUMMARY_PATH" <<< "$push_input"
+
+if [[ -n "$(git status --porcelain -- "$SUMMARY_PATH")" ]]; then
+  echo ""
+  echo "Push summary updated at docs/push-summaries/latest.md"
+  echo "Review it, then run:"
+  echo "  git add docs/push-summaries/latest.md"
+  echo "  git commit -m \"Add push summary\""
+  echo "  git push"
+  echo ""
+  echo "Push blocked intentionally so the summary becomes part of the visible history."
+  exit 1
+fi
+
+exit 0

@@ -14,8 +14,98 @@ Use this document to prepare for presentations, Q&A, and interviews. It explains
 | **Policy** | What the tool is *allowed* to do without asking vs must ask vs must block | `.codex/rules/default.rules` |
 | **Tools & context** | How the model gets facts from *outside* the chat (DB, docs, APIs) in a structured way | `.codex/config.toml` (MCP) |
 | **Repeatable workflow** | Same quality bar every time (review before commit) | `.codex/SKILLS.md` |
+| **Git-aware artifact generation** | Turn upcoming Git changes into visible review material before shipping | `tools/git_mcp_server.py` + `.githooks/pre-push` |
+| **Ticket-grounded implementation** | Turn a Jira issue into a traceable code change workflow | `AGENTS.md` + `docs/JIRA_DEMO.md` |
 
 **One-liner:** *We’re not demoing “the model is smart”—we’re demoing **governed automation**: code + policy + tool access + a repeatable process.*
+
+---
+
+## 1.5 Git MCP + pre-push summaries
+
+### What this adds to the story
+
+This repo can now demonstrate a very practical pattern:
+
+- Git knows what is about to be pushed
+- An MCP server can inspect that context
+- The assistant can turn it into a structured summary
+- A Git hook can force that summary to be reviewed before the push goes through
+
+This is a strong teaching example because it connects **tool calling**, **repository state**, and **human review**.
+
+### Why not auto-commit during push?
+
+You *can* script Git to create commits during `pre-push`, but it is usually a poor teaching pattern:
+
+- It hides side effects at exactly the moment users expect a straightforward push
+- It can produce confusing history
+- It makes failures harder for juniors to debug
+
+So this demo uses a safer pattern:
+
+1. Generate `docs/push-summaries/latest.md`
+2. Stop the push if that file changed
+3. Ask the user to review and commit it explicitly
+
+That keeps the automation visible and auditable.
+
+### What the MCP server does
+
+The local STDIO server `tools/git_mcp_server.py` exposes tools that:
+
+- read Git ref information from a pre-push line
+- collect commit subjects
+- list changed files
+- compute diff stats
+- write a Markdown artifact inside the repo
+
+### What the hook does
+
+The repo-local hook `.githooks/pre-push` calls `tools/git_summary.py` and updates the summary file. If the file changes, the hook fails intentionally so the user can commit the summary first.
+
+**Sound bite:** *The push summary is not a secret side effect; it becomes part of the code review surface.*
+
+---
+
+## 1.6 Jira MCP + implement-ticket workflow
+
+### What this demonstrates
+
+This repo can also show a second important pattern:
+
+- the developer gives a ticket ID
+- Codex reads the ticket through Jira MCP
+- Codex explains the requirement before coding
+- Codex maps the request to local files
+- Codex implements and verifies the change
+
+This is often the most convincing real-world use case for juniors because it connects external product requirements to actual code changes.
+
+### Why `AGENTS.md` matters here
+
+Jira access alone is not enough.
+
+You also want repo-specific behavior such as:
+- always read the ticket first
+- summarize acceptance criteria
+- avoid guessing missing details
+- keep changes minimal and traceable
+
+That instruction layer lives well in `AGENTS.md`.
+
+### Why not rely on a custom slash command?
+
+A slash command such as `/implement PROJ-123` is a nice UX idea, but the important capability is not the slash command itself.
+
+The real building blocks are:
+- MCP access to Jira
+- repo instructions in `AGENTS.md`
+- a strong prompt convention
+
+If a client later supports native custom commands, it can sit on top of the same workflow.
+
+**Sound bite:** *The magic is not `/implement`; the magic is grounded tool use plus a repeatable implementation workflow.*
 
 ---
 
@@ -48,7 +138,7 @@ The assistant isn’t only following instructions in the chat; it can also be co
 
 **Sound bite:** *Prompts steer behavior; rules enforce boundaries.*
 
-### This repo’s three rules (how to explain each)
+### This repo’s four rules (how to explain each)
 
 1. **`allow` + git read commands**  
    - **Idea:** Low risk, high value for understanding the repo.  
@@ -60,7 +150,12 @@ The assistant isn’t only following instructions in the chat; it can also be co
    - **Common question:** “Why prompt and not forbid?”  
    - **Answer:** Updates are *often* necessary; we don’t block—we **confirm** because impact is high.
 
-3. **`forbidden` + destructive ops**  
+3. **`prompt` + git push**  
+   - **Idea:** Publishing code has external impact, so the workflow should surface it clearly.  
+   - **Common question:** “Why prompt if Git already asks me for nothing?”  
+   - **Answer:** Because the point is governance: the assistant should still stop and let a human confirm high-impact actions.
+
+4. **`forbidden` + destructive ops**  
    - **Idea:** Some actions have asymmetric downside; automation shouldn’t do them lightly.  
    - **Common question:** “What about false positives?”  
    - **Answer:** Rules should be **specific** (patterns) and **reviewed**; you tune for your org.
@@ -103,6 +198,8 @@ Think: **one pattern to plug in “things the model can use.”**
 **This repo’s names:**
 
 - **`sqlite_local` (STDIO):** Anything **on this machine** exposed via a small adapter process.  
+- **`git_summary_local` (STDIO):** A local Git-aware utility server that turns push metadata into reviewable Markdown.  
+- **`jira_project` (HTTP):** A remote Jira MCP connection that lets Codex read issue details directly.  
 - **`internal_api_docs` (HTTP):** Anything **on the network** exposed as a long-lived MCP service.
 
 ### “Why not just use REST?”
@@ -161,7 +258,7 @@ A **repeatable playbook**: steps + definition of done + output format. **Process
 
 ## 6. One coherent story (~30 seconds)
 
-*We have a small PHP service the assistant can improve. Before it runs powerful commands, **rules** decide allow vs prompt vs forbid. When it needs facts, **MCP** connects it to local or remote **tools** instead of guessing. Before we commit, the **Pre-Commit Code Review** skill applies the same security and style bar every time.*
+*We have a small PHP service the assistant can improve. Before it runs powerful commands, **rules** decide allow vs prompt vs forbid. When it needs facts, **MCP** connects it to local or remote **tools** instead of guessing. Jira MCP can turn a ticket number into grounded requirements. A Git-aware MCP tool can turn the upcoming push into a reviewable artifact. Before we commit, the **Pre-Commit Code Review** skill applies the same security and style bar every time.*
 
 ---
 
@@ -183,6 +280,8 @@ A **repeatable playbook**: steps + definition of done + output format. **Process
 2. **STDIO vs HTTP MCP** — one sentence each.  
 3. **Skill** — repeatable workflow + severity + commit gate.  
 4. **PHP demo** — JSON API, validated `user_id`, 404 path.
+5. **Git summary demo** — hook writes a Markdown summary and intentionally blocks push until it is reviewed.
+6. **Jira implementation demo** — ticket ID becomes requirements, file mapping, implementation, and verification.
 
 ---
 
@@ -194,4 +293,8 @@ A **repeatable playbook**: steps + definition of done + output format. **Process
 | `.codex/rules/default.rules` | Mock policy (allow / prompt / forbid) |
 | `.codex/config.toml` | Mock MCP servers (STDIO + HTTP) |
 | `.codex/SKILLS.md` | “Pre-Commit Code Review” workflow |
+| `AGENTS.md` | Repo instructions for ticket-driven implementation behavior |
+| `docs/JIRA_DEMO.md` | Presenter notes and prompts for the Jira flow |
+| `tools/git_mcp_server.py` | Local MCP server for Git push summaries |
+| `.githooks/pre-push` | Hook that enforces visible summary generation before push |
 | `src/index.php` | Target PHP codebase for the assistant |

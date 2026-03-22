@@ -16,6 +16,22 @@ args = ["tools/sqlite_mcp_server.py", "--db", "data/demo.sqlite"]
 working_dir = "."
 enabled = true
 
+# Local Git-focused MCP server for push summaries.
+[mcp.servers.git_summary_local]
+type = "stdio"
+command = "python3"
+args = ["tools/git_mcp_server.py"]
+working_dir = "."
+enabled = true
+
+# Jira MCP template for ticket-driven implementation demos.
+# Replace the placeholder token and project guidance with your real setup.
+[mcp.servers.jira_project]
+type = "streamable_http"
+url = "https://mcp.atlassian.com/v1/mcp"
+headers = { "Authorization" = "Bearer ATLASSIAN_API_TOKEN", "X-Demo-Client" = "codex-mcp-demo" }
+enabled = false
+
 # Dummy Streamable HTTP MCP server (e.g., internal API docs service).
 [mcp.servers.internal_api_docs]
 type = "streamable_http"

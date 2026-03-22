@@ -18,7 +18,15 @@ rules = [
         reason = "Package operations can change lockfiles and runtime behavior.",
     ),
 
-    # 3) Forbidden: block clearly dangerous shell/database commands.
+    # 3) Prompt: treat pushes as high-impact actions that deserve review.
+    rule(
+        name = "prompt-git-push",
+        action = "prompt",
+        match = command_matches(r"^git push( .*)?$"),
+        reason = "Pushing publishes changes and should be reviewed explicitly.",
+    ),
+
+    # 4) Forbidden: block clearly dangerous shell/database commands.
     rule(
         name = "forbid-destructive-ops",
         action = "forbidden",
