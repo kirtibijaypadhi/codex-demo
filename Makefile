@@ -1,5 +1,5 @@
 # Convenience targets for live demos (no Composer required for `make demo`).
-.PHONY: demo serve check curl install-hooks push-summary implement-ticket
+.PHONY: demo serve check curl install-hooks push-summary refresh-summary implement-ticket
 
 HOST ?= localhost
 PORT ?= 8080
@@ -25,6 +25,9 @@ install-hooks:
 
 push-summary:
 	python3 tools/git_summary.py --push-line "$(PUSH_LINE)"
+
+refresh-summary:
+	python3 tools/git_summary.py --push-line "refs/heads/main $$(git rev-parse HEAD) refs/heads/main $$(git rev-parse origin/main 2>/dev/null || printf '%040d' 0)"
 
 implement-ticket:
 	./scripts/implement-ticket.sh "$(TICKET)"

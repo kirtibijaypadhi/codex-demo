@@ -45,8 +45,8 @@ You *can* script Git to create commits during `pre-push`, but it is usually a po
 So this demo uses a safer pattern:
 
 1. Generate `docs/push-summaries/latest.md`
-2. Stop the push if that file changed
-3. Ask the user to review and commit it explicitly
+2. Optionally refresh it before push, or let the hook refresh it during push
+3. Let the user decide whether to commit the refreshed summary
 
 That keeps the automation visible and auditable.
 
@@ -62,9 +62,9 @@ The local STDIO server `tools/git_mcp_server.py` exposes tools that:
 
 ### What the hook does
 
-The repo-local hook `.githooks/pre-push` calls `tools/git_summary.py` and updates the summary file. If the file changes, the hook fails intentionally so the user can commit the summary first.
+The repo-local hook `.githooks/pre-push` calls `tools/git_summary.py` and updates the summary file. If the file changes, it prints an advisory message but still allows the push to continue.
 
-**Sound bite:** *The push summary is not a secret side effect; it becomes part of the code review surface.*
+**Sound bite:** *The push summary is visible and reviewable, without making every push fragile.*
 
 ---
 

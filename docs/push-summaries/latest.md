@@ -3,12 +3,14 @@
 ## Push Context
 
 - Local ref: `refs/heads/main`
-- Local sha: `5d59f631db9e206fc31b42e80617141e22cae376`
+- Local sha: `64452c87323bfd086040b352946d8169765f03cb`
 - Remote ref: `refs/heads/main`
 - Remote sha: `d961a63dc7d4f62d6b166cbe0f7a6e54d47849c3`
 
 ## Commits In This Push
 
+- 69bad20 Make push summary generation deterministic
+- 5d59f63 add push summary for MCP
 - fff61a4 add git and jira MCP demo workflow
 
 ## Files Changed
@@ -31,21 +33,21 @@
 ## Diff Stat
 
 ```text
-.codex/config.toml            |  16 ++++
- .codex/rules/default.rules    |  10 ++-
+.codex/config.toml            |  16 +++
+ .codex/rules/default.rules    |  10 +-
  .githooks/pre-push            |  28 ++++++
  .gitignore                    |   3 +
- AGENTS.md                     |  56 ++++++++++++
+ AGENTS.md                     |  56 +++++++++++
  Makefile                      |  13 ++-
- README.md                     | 106 ++++++++++++++++++++++-
- docs/JIRA_DEMO.md             |  73 ++++++++++++++++
- docs/THEORY.md                | 109 +++++++++++++++++++++++-
- docs/push-summaries/README.md |   5 ++
+ README.md                     | 106 +++++++++++++++++++-
+ docs/JIRA_DEMO.md             |  73 ++++++++++++++
+ docs/THEORY.md                | 109 ++++++++++++++++++++-
+ docs/push-summaries/README.md |   5 +
  scripts/implement-ticket.sh   |  22 +++++
- scripts/install-hooks.sh      |  10 +++
- tools/git_mcp_server.py       | 135 +++++++++++++++++++++++++++++
- tools/git_summary.py          | 194 ++++++++++++++++++++++++++++++++++++++++++
- 14 files changed, 773 insertions(+), 7 deletions(-)
+ scripts/install-hooks.sh      |  10 ++
+ tools/git_mcp_server.py       | 135 ++++++++++++++++++++++++++
+ tools/git_summary.py          | 221 ++++++++++++++++++++++++++++++++++++++++++
+ 14 files changed, 800 insertions(+), 7 deletions(-)
 ```
 
 ## Diff Excerpt

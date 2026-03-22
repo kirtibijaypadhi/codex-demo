@@ -88,6 +88,7 @@ make install-hooks
 ```
 
 This activates the repo-local `.githooks/pre-push` hook. On `git push`, it refreshes `docs/push-summaries/latest.md` and intentionally blocks the push if the summary changed, so you can review and commit it first.
+This activates the repo-local `.githooks/pre-push` hook. On `git push`, it refreshes `docs/push-summaries/latest.md` and prints an advisory message if the file changed. It does not block the push.
 
 ### Test the API
 
@@ -155,7 +156,7 @@ Instead of silently changing a push behind the user’s back, the demo makes the
 - Git decides what is about to be pushed
 - MCP-style tooling summarizes it
 - The summary becomes a real file in the repo
-- The push stops until the user reviews and commits that file
+- The hook can refresh the file during push, or you can refresh it explicitly before push
 
 That gives juniors a much clearer mental model of **tooling + policy + human approval**.
 
@@ -165,6 +166,12 @@ You can generate a summary without pushing by passing a sample pre-push line:
 
 ```bash
 make push-summary PUSH_LINE="refs/heads/main $(git rev-parse HEAD) refs/heads/main 0000000000000000000000000000000000000000"
+```
+
+Or refresh the summary against your current `origin/main` before pushing:
+
+```bash
+make refresh-summary
 ```
 
 ## Demo Script (Step-by-Step)
@@ -196,8 +203,9 @@ make push-summary PUSH_LINE="refs/heads/main $(git rev-parse HEAD) refs/heads/ma
 - Open `tools/git_mcp_server.py` and `tools/git_summary.py`.
 - Explain that the MCP server can inspect Git context and write a Markdown summary file.
 - Run `make install-hooks`.
-- Show `.githooks/pre-push` and explain that the push is blocked on purpose until the generated summary is committed.
-- Emphasize that this is safer and easier to teach than silently creating hidden commits during push.
+- Show `.githooks/pre-push` and explain that it refreshes the summary during push without blocking delivery.
+- Run `make refresh-summary` to show the explicit workflow.
+- Explain that the hook is advisory only, so the summary demo is visible without interrupting delivery.
 
 ### 4) Show repeatable workflow skill
 - Open `.codex/SKILLS.md`.

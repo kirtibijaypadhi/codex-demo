@@ -15,14 +15,12 @@ python3 "$ROOT/tools/git_summary.py" --output "$SUMMARY_PATH" <<< "$push_input"
 
 if [[ -n "$(git status --porcelain -- "$SUMMARY_PATH")" ]]; then
   echo ""
-  echo "Push summary updated at docs/push-summaries/latest.md"
-  echo "Review it, then run:"
+  echo "Push summary refreshed at docs/push-summaries/latest.md"
+  echo "Optional next step:"
   echo "  git add docs/push-summaries/latest.md"
-  echo "  git commit -m \"Add push summary\""
-  echo "  git push"
+  echo "  git commit -m \"Refresh push summary\""
   echo ""
-  echo "Push blocked intentionally so the summary becomes part of the visible history."
-  exit 1
+  echo "Push is continuing. The summary workflow is advisory, not blocking."
 fi
 
 exit 0
