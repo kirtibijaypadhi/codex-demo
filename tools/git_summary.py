@@ -4,7 +4,6 @@
 from __future__ import annotations
 
 import argparse
-import datetime as dt
 import subprocess
 from dataclasses import dataclass
 from pathlib import Path
@@ -13,6 +12,7 @@ from typing import Iterable
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_OUTPUT = REPO_ROOT / "docs" / "push-summaries" / "latest.md"
+SUMMARY_RELATIVE_PATH = DEFAULT_OUTPUT.relative_to(REPO_ROOT).as_posix()
 
 
 class GitSummaryError(RuntimeError):
@@ -25,6 +25,10 @@ class PushContext:
     local_sha: str
     remote_ref: str
     remote_sha: str
+
+
+def rev_parse(revision: str) -> str:
+    return run_git(["rev-parse", revision])
 
 
 def run_git(args: list[str]) -> str:
@@ -59,15 +63,16 @@ def commit_subjects(commit_range: str) -> list[str]:
 
 def changed_files(diff_range: str) -> list[str]:
     output = run_git(["diff", "--name-only", diff_range])
-    return [line for line in output.splitlines() if line]
+    return [line for line in output.splitlines() if line and line != SUMMARY_RELATIVE_PATH]
 
 
 def diff_stat(diff_range: str) -> str:
-    return run_git(["diff", "--stat", diff_range])
+    output = run_git(["diff", "--stat", diff_range, "--", ".", f":(exclude){SUMMARY_RELATIVE_PATH}"])
+    return output or "(No diff stat available after excluding generated summary file)"
 
 
 def unified_diff_excerpt(diff_range: str, limit: int = 120) -> list[str]:
-    output = run_git(["diff", "--unified=1", diff_range])
+    output = run_git(["diff", "--unified=1", diff_range, "--", ".", f":(exclude){SUMMARY_RELATIVE_PATH}"])
     lines = output.splitlines()
     return lines[:limit]
 
@@ -82,11 +87,36 @@ def remote_exists(remote_sha: str) -> bool:
         return False
 
 
+def commit_changed_files(commit_sha: str) -> list[str]:
+    output = run_git(["diff-tree", "--no-commit-id", "--name-only", "-r", commit_sha])
+    return [line for line in output.splitlines() if line]
+
+
+def is_summary_only_commit(commit_sha: str) -> bool:
+    files = commit_changed_files(commit_sha)
+    return bool(files) and all(path == SUMMARY_RELATIVE_PATH for path in files)
+
+
+def effective_local_sha(context: PushContext) -> str:
+    local_sha = context.local_sha
+    if not remote_exists(local_sha):
+        return local_sha
+
+    if is_summary_only_commit(local_sha):
+        try:
+            return rev_parse(f"{local_sha}^")
+        except GitSummaryError:
+            return local_sha
+
+    return local_sha
+
+
 def build_ranges(context: PushContext) -> tuple[str, str]:
+    local_sha = effective_local_sha(context)
     if remote_exists(context.remote_sha):
-        return (f"{context.remote_sha}..{context.local_sha}", f"{context.remote_sha}..{context.local_sha}")
+        return (f"{context.remote_sha}..{local_sha}", f"{context.remote_sha}..{local_sha}")
     base = run_git(["hash-object", "-t", "tree", "/dev/null"])
-    return (context.local_sha, f"{base}..{context.local_sha}")
+    return (local_sha, f"{base}..{local_sha}")
 
 
 def render_summary(context: PushContext) -> str:
@@ -95,15 +125,12 @@ def render_summary(context: PushContext) -> str:
     files = changed_files(diff_range)
     stat = diff_stat(diff_range)
     excerpt = unified_diff_excerpt(diff_range)
-    generated_at = dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
 
     commit_lines = "\n".join(f"- {line}" for line in subjects) if subjects else "- No commits detected"
     file_lines = "\n".join(f"- `{path}`" for path in files) if files else "- No file changes detected"
     excerpt_block = "\n".join(excerpt) if excerpt else "(No diff excerpt available)"
 
     return f"""# Push Summary
-
-Generated: {generated_at}
 
 ## Push Context
 
