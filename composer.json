@@ -1,0 +1,16 @@
+{
+  "name": "demo/codex-mcp-demo",
+  "description": "Demo PHP API for Codex rules engine and MCP presentation",
+  "type": "project",
+  "license": "MIT",
+  "require": {
+    "php": "^8.1"
+  },
+  "config": {
+    "sort-packages": true
+  },
+  "scripts": {
+    "demo": "php -S localhost:8080 -t src",
+    "demo:check": "php -v && php -l src/index.php"
+  }
+}

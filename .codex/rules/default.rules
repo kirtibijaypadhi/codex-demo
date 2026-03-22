@@ -1,0 +1,31 @@
+# Mock Codex rules engine policy (Starlark-style example).
+# This file is intentionally simple for demo purposes.
+
+rules = [
+    # 1) Allow: low-risk read-only git commands.
+    rule(
+        name = "allow-safe-git-read",
+        action = "allow",
+        match = command_matches(r"^git (status|diff|log)( .*)?$"),
+        reason = "Allow standard read-only git inspection commands.",
+    ),
+
+    # 2) Prompt: ask for explicit approval on package changes.
+    rule(
+        name = "prompt-package-management",
+        action = "prompt",
+        match = command_matches(r"^composer (update|require|remove)( .*)?$"),
+        reason = "Package operations can change lockfiles and runtime behavior.",
+    ),
+
+    # 3) Forbidden: block clearly dangerous shell/database commands.
+    rule(
+        name = "forbid-destructive-ops",
+        action = "forbidden",
+        match = any_of([
+            command_matches(r"^rm -rf( .*)?$"),
+            command_matches(r".*\bDROP\s+DATABASE\b.*"),
+        ]),
+        reason = "Prevent irreversible destructive operations in demo environments.",
+    ),
+]

@@ -1,0 +1,28 @@
+# Mock Codex configuration for MCP demo integrations.
+
+[project]
+name = "codex-mcp-demo"
+language = "php"
+entrypoint = "src/index.php"
+
+[rules]
+default = ".codex/rules/default.rules"
+
+# Dummy local STDIO MCP server (e.g., SQLite connector).
+[mcp.servers.sqlite_local]
+type = "stdio"
+command = "python3"
+args = ["tools/sqlite_mcp_server.py", "--db", "data/demo.sqlite"]
+working_dir = "."
+enabled = true
+
+# Dummy Streamable HTTP MCP server (e.g., internal API docs service).
+[mcp.servers.internal_api_docs]
+type = "streamable_http"
+url = "https://internal-docs.example.local/mcp"
+headers = { "Authorization" = "Bearer DEMO_TOKEN", "X-Demo-Client" = "codex-mcp-demo" }
+enabled = true
+
+[mcp.defaults]
+timeout_seconds = 20
+retry_attempts = 2
